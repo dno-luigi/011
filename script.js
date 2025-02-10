@@ -151,9 +151,44 @@ const menuButton = document.getElementById('menuButton');
     function appendAIMessage(aiMessageContent) {
       const aiMessageElement = document.createElement('div');
       aiMessageElement.classList.add('message', 'ai-message');
-      aiMessageElement.innerHTML = marked.parse(aiMessageContent);
+
+      // Split the response into paragraphs
+      const paragraphs = aiMessageContent.split('\n').filter(p => p.trim() !== '');
+      paragraphs.forEach((paragraph, index) => {
+        const paragraphElement = document.createElement('p');
+        paragraphElement.textContent = paragraph;
+
+        // Create delete button for each paragraph
+        const deleteButton = createButton('<i class="fas fa-trash"></i>', () => {
+          paragraphElement.remove();
+        });
+
+        // Create read aloud button for each paragraph
+        const readAloudButton = createButton('<i class="fas fa-volume-up"></i>', () => {
+          const utterance = new SpeechSynthesisUtterance(paragraph);
+          utterance.lang = 'en-US';
+          speechSynthesis.speak(utterance);
+        });
+
+        paragraphElement.appendChild(deleteButton);
+        paragraphElement.appendChild(readAloudButton);
+        aiMessageElement.appendChild(paragraphElement);
+      });
+
+      // Create copy button
+      const copyButton = createButton('<i class="fas fa-copy"></i>', () => {
+        const parsedContent = paragraphs.join('\n');
+        navigator.clipboard.writeText(parsedContent).then(() => {
+          alert('Response copied to clipboard');
+        });
+      });
+
+      aiMessageElement.appendChild(copyButton);
       conversation.appendChild(aiMessageElement);
       conversation.scrollTop = conversation.scrollHeight;
+
+      // Render markdown for user
+      aiMessageElement.innerHTML = marked.parse(aiMessageContent);
 
       if (aiSpeechEnabled) {
         if (currentUtterance) {
